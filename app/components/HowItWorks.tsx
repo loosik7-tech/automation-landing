@@ -6,27 +6,27 @@ const steps = [
   {
     num: "01",
     title: "Входящее обращение",
-    desc: "Клиент оставляет заявку или вопрос на вашем сайте.",
+    desc: "Клиент оставляет заявку или вопрос на вашем сайте",
   },
   {
     num: "02",
     title: "Мгновенный ответ",
-    desc: "Система автоматически приветствует клиента.",
+    desc: "Система автоматически приветствует клиента",
   },
   {
     num: "03",
     title: "Уточнение деталей",
-    desc: "Выяснение потребности и сбор важных данных.",
+    desc: "Выяснение задачи и сбор важных данных",
   },
   {
     num: "04",
     title: "Фиксация контакта",
-    desc: "Запрос имени и телефона в комфортной форме.",
+    desc: "Запрос имени и телефона в комфортной форме",
   },
   {
     num: "05",
     title: "Передача вам",
-    desc: "Готовая заявка отправляется напрямую менеджеру.",
+    desc: "Готовая заявка отправляется напрямую менеджеру",
   },
 ];
 
@@ -56,7 +56,7 @@ export default function HowItWorks() {
           </h2>
           <p style={{ maxWidth: 500, margin: "0 auto" }}>
             Элегантный и незаметный для пользователя процесс, который гарантирует
-            сбор контактов.
+            сбор контактов
           </p>
         </div>
 
@@ -125,24 +125,10 @@ export default function HowItWorks() {
                   />
                 )}
               </div>
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  marginBottom: 6,
-                  color: "var(--text)",
-                  lineHeight: 1.3,
-                }}
-              >
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, color: "var(--text)", lineHeight: 1.3 }}>
                 {step.title}
               </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "var(--text-muted)",
-                  lineHeight: 1.5,
-                }}
-              >
+              <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
                 {step.desc}
               </div>
             </div>
@@ -165,39 +151,14 @@ export default function HowItWorks() {
           }}
         >
           <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 10,
-              }}
-            >
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#8fbd8a",
-                }}
-              />
-              <div
-                style={{
-                  color: "white",
-                  fontWeight: 500,
-                  fontSize: 20,
-                }}
-              >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#8fbd8a" }} />
+              <div style={{ color: "white", fontWeight: 500, fontSize: 20 }}>
                 Итог: готовый контакт клиента
               </div>
             </div>
-            <div
-              style={{
-                color: "rgba(255,255,255,0.7)",
-                fontSize: 15,
-              }}
-            >
-              Контакт, имя и задача переданы вам. Никаких ручных действий.
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 15 }}>
+              Контакт, имя и задача переданы вам. Никаких ручных действий
             </div>
           </div>
           <a href="#contact">

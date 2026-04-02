@@ -48,7 +48,6 @@ export default function WhyMe() {
     >
       <div className="section-container">
         <div className="section-head reveal">
-          <div className="badge">Подход</div>
           <h2
             style={{
               fontFamily: "Jura, sans-serif",
@@ -60,7 +59,7 @@ export default function WhyMe() {
             Почему стоит работать со мной
           </h2>
           <p style={{ maxWidth: 500, margin: "0 auto" }}>
-            Беру на себя техническую часть и настройку сценария, чтобы вы
+            Беру на себя техническую часть и настройку сценария, чтобы Вы
             получали готовые заявки без ручной обработки.
           </p>
           <div
@@ -68,18 +67,15 @@ export default function WhyMe() {
               maxWidth: 560,
               margin: "18px auto 0",
               fontSize: 14,
-              lineHeight: 1.6,
+              lineHeight: 1.7,
               color: "var(--text-muted)",
               fontWeight: 400,
+              textAlign: "left",
             }}
           >
-            <div>
-              Настройкой занимаюсь лично. Под каждый бизнес собираю систему под
-              ключ, без шаблонных решений.
-            </div>
-            <div style={{ marginTop: 6 }}>
-              Работаю напрямую, без команды и перепродаж.
-            </div>
+            <div>→ Настройкой занимаюсь лично</div>
+            <div>→ Под каждый бизнес собираю систему под ключ, без шаблонных решений</div>
+            <div>→ Работаю напрямую</div>
           </div>
         </div>
 
@@ -124,22 +120,10 @@ export default function WhyMe() {
               >
                 {r.icon}
               </div>
-              <h3
-                style={{
-                  fontWeight: 600,
-                  fontSize: 17,
-                  color: "var(--text)",
-                }}
-              >
+              <h3 style={{ fontWeight: 600, fontSize: 17, color: "var(--text)" }}>
                 {r.title}
               </h3>
-              <p
-                style={{
-                  color: "var(--text-muted)",
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                }}
-              >
+              <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6 }}>
                 {r.desc}
               </p>
             </div>

@@ -42,7 +42,7 @@ function CheckIcon() {
 const steps = [
   { label: "Входящая заявка", desc: "Клиент пишет на сайте" },
   { label: "Ответ за 3 секунды", desc: "Автоматическое приветствие" },
-  { label: "Сбор данных", desc: "Имя, телефон, потребность" },
+  { label: "Сбор данных", desc: "Имя, телефон, задача" },
   { label: "Готовый лид в CRM", desc: "Мгновенная передача вам" },
 ];
 
@@ -52,11 +52,7 @@ export default function ProblemSolution() {
   return (
     <section
       id="problem"
-      style={{
-        paddingTop: 112,
-        paddingBottom: 112,
-        background: "var(--surface)",
-      }}
+      style={{ paddingTop: 112, paddingBottom: 112, background: "var(--surface)" }}
       ref={sectionRef}
       aria-label="Как система работает"
     >
@@ -88,7 +84,7 @@ export default function ProblemSolution() {
             lineHeight: 1.6,
           }}
         >
-          Каждое обращение проходит через простой и надёжный путь — без ручной
+          Каждое обращение проходит через простой и надежный путь — без ручной
           обработки и потерь
         </p>
 
@@ -104,14 +100,7 @@ export default function ProblemSolution() {
           }}
         >
           {steps.map((step, i) => (
-            <div
-              key={step.label}
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 0,
-              }}
-            >
+            <div key={step.label} style={{ display: "flex", alignItems: "flex-start", gap: 0 }}>
               <div
                 style={{
                   display: "flex",
@@ -136,20 +125,16 @@ export default function ProblemSolution() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color:
-                      i === steps.length - 1 ? "#fff" : "var(--primary)",
+                    color: i === steps.length - 1 ? "#fff" : "var(--primary)",
                     fontSize: 18,
                     fontWeight: 700,
                     fontFamily: "Manrope, sans-serif",
                     flexShrink: 0,
                   }}
                 >
-                  {i === steps.length - 1 ? (
-                    <CheckIcon />
-                  ) : (
-                    `0${i + 1}`
-                  )}
+                  {i === steps.length - 1 ? <CheckIcon /> : `0${i + 1}`}
                 </div>
+
                 <div>
                   <div
                     style={{
@@ -162,13 +147,7 @@ export default function ProblemSolution() {
                   >
                     {step.label}
                   </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: "var(--text-muted)",
-                      lineHeight: 1.5,
-                    }}
-                  >
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
                     {step.desc}
                   </div>
                 </div>
@@ -193,25 +172,10 @@ export default function ProblemSolution() {
 
         <div
           className="reveal reveal-delay-3"
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 24,
-            marginTop: 48,
-            flexWrap: "wrap",
-          }}
+          style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 48, flexWrap: "wrap" }}
         >
           {["Без ожидания", "Без потерь", "Без ручной работы"].map((t) => (
-            <div
-              key={t}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 14,
-                color: "var(--text-muted)",
-              }}
-            >
+            <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--text-muted)" }}>
               <span
                 style={{
                   width: 20,

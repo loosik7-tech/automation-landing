@@ -16,32 +16,20 @@ export default function Hero() {
           border: "none",
         }}
       >
-        <h1
-          className="hero-title animate-fadeUp"
-          style={{ animationDelay: "0.1s" }}
-        >
+        <h1 className="hero-title animate-fadeUp" style={{ animationDelay: "0.1s" }}>
           Автоматическая обработка заявок для бизнеса
         </h1>
 
-        <p
-          className="hero-subtitle animate-fadeUp"
-          style={{ animationDelay: "0.25s" }}
-        >
+        <p className="hero-subtitle animate-fadeUp" style={{ animationDelay: "0.25s" }}>
           Для салонов, клиник и сервисов с записью: ответы клиентам за секунды,
           сбор контактов и передача заявок в CRM
         </p>
 
-        <p
-          className="hero-tertiary animate-fadeUp"
-          style={{ animationDelay: "0.35s" }}
-        >
+        <p className="hero-tertiary animate-fadeUp" style={{ animationDelay: "0.35s" }}>
           Вы перестаете терять заявки уже через 3 дня
         </p>
 
-        <div
-          className="chat animate-fadeUp"
-          style={{ animationDelay: "0.45s" }}
-        >
+        <div className="chat animate-fadeUp" style={{ animationDelay: "0.45s" }}>
           <div className="hero-chat-card">
             <div className="hero-chat-header">
               <span
@@ -59,7 +47,7 @@ export default function Hero() {
 
             <div className="hero-chat-body">
               <div className="hero-message hero-message-user">
-                Добрый день, подскажите стоимость?
+                Здравствуйте, подскажите стоимость
               </div>
 
               <div className="hero-message hero-message-bot">
@@ -67,9 +55,7 @@ export default function Hero() {
                 прайс-лист?
               </div>
 
-              <div className="hero-message hero-message-user">
-                +7 900 123-45-67
-              </div>
+              <div className="hero-message hero-message-user">+7 900 123-45-67</div>
 
               <div className="hero-typing">
                 <div className="typing-dot" />
@@ -80,23 +66,15 @@ export default function Hero() {
           </div>
         </div>
 
-        <div
-          className="buttons animate-fadeUp"
-          style={{ animationDelay: "0.55s" }}
-        >
+        <div className="buttons animate-fadeUp" style={{ animationDelay: "0.55s" }}>
           <a href="#contact" className="hero-link">
-            <button className="text-button hero-btn-primary">
-              Настроить систему
-            </button>
+            <button className="text-button hero-btn-primary">Настроить систему</button>
           </a>
 
           <a href="#demo" className="hero-link">
-            <button className="text-button hero-btn-secondary">
-              Попробовать демо
-            </button>
+            <button className="text-button hero-btn-secondary">Попробовать демо</button>
           </a>
         </div>
-
       </div>
     </section>
   );
