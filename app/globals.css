@@ -105,6 +105,15 @@ nav {
   font-family: "Manrope", sans-serif !important;
 }
 
+/* Fixed heading font system */
+h1,
+h2,
+.hero-title,
+.section-head h2,
+section h2 {
+  font-family: "Jura", sans-serif !important;
+}
+
 .text-display {
   font-family: "Manrope", sans-serif !important;
   font-size: 72px;
