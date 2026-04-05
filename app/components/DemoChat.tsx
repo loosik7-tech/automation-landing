@@ -18,6 +18,8 @@ const FALLBACK_GREETING =
 const ASK_AI_FALLBACK =
   "Понял вас. Уточните, пожалуйста, запрос, и я помогу с выбором или записью.";
 
+const SERVICE_NEEDS_CALLBACK = "Нужен звонок для уточнения услуги";
+
 async function askDeepSeek(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   stage: string,
@@ -239,6 +241,15 @@ export default function DemoChat() {
           ? "lead_collection"
           : "free_conversation";
       const reply = await askDeepSeek(updatedHistory, stage, updatedLead);
+
+      // If the assistant clarified a concrete service (e.g. "цель обращения — педикюр"),
+      // use that as fallback source for lead goal.
+      const serviceFromReply = normalizeServiceIntent(extractServiceIntent(reply));
+      if (!updatedLead.service && serviceFromReply) {
+        setLead((prev) => ({ ...prev, service: serviceFromReply }));
+      } else if (!updatedLead.service && updatedLead.name && updatedLead.phone) {
+        setLead((prev) => ({ ...prev, service: SERVICE_NEEDS_CALLBACK }));
+      }
 
       setLlmHistory([
         ...updatedHistory,
