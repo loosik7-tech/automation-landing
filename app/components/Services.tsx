@@ -4,7 +4,7 @@ const services = [
   {
     num: "I",
     title: "Интеллектуальный чат",
-    desc: "Система интегрируется на сайт и моментально отвечает каждому посетителю, исключая ожидание.",
+    desc: "Система подключается на сайт, во ВКонтакте и в мессенджеры, мгновенно отвечает клиентам и исключает ожидание.",
   },
   {
     num: "II",
@@ -45,12 +45,12 @@ export default function Services() {
           style={{
             color: "var(--text-muted)",
             fontSize: 16,
-            maxWidth: 500,
+            maxWidth: 620,
             margin: "0 auto",
             lineHeight: 1.6,
           }}
         >
-          Полный цикл. От момента, когда клиент впервые написал на сайте, до готовой заявки.
+          Полный цикл: от первого сообщения клиента с сайта, из ВКонтакте или мессенджера до готовой заявки.
         </p>
       </div>
 
@@ -66,12 +66,8 @@ export default function Services() {
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", marginBottom: 24, letterSpacing: "1px" }}>
               {s.num}.
             </div>
-            <h3 style={{ fontWeight: 500, fontSize: 18, marginBottom: 12, color: "var(--text)" }}>
-              {s.title}
-            </h3>
-            <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6 }}>
-              {s.desc}
-            </p>
+            <h3 style={{ fontWeight: 500, fontSize: 18, marginBottom: 12, color: "var(--text)" }}>{s.title}</h3>
+            <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6 }}>{s.desc}</p>
           </div>
         ))}
       </div>

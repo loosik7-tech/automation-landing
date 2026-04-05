@@ -21,8 +21,8 @@ export default function Hero() {
         </h1>
 
         <p className="hero-subtitle animate-fadeUp" style={{ animationDelay: "0.25s" }}>
-          Для салонов, клиник и сервисов с записью: ответы клиентам за секунды,
-          сбор контактов и передача заявок в CRM
+          Для салонов, клиник и сервисов с записью: автоматизация работает на сайте, во ВКонтакте и в
+          мессенджерах, отвечает за секунды, собирает контакты и передает заявки в CRM
         </p>
 
         <p className="hero-tertiary animate-fadeUp" style={{ animationDelay: "0.35s" }}>
@@ -46,13 +46,10 @@ export default function Hero() {
             </div>
 
             <div className="hero-chat-body">
-              <div className="hero-message hero-message-user">
-                Здравствуйте, подскажите стоимость
-              </div>
+              <div className="hero-message hero-message-user">Добрый день, подскажите стоимость</div>
 
               <div className="hero-message hero-message-bot">
-                Стоимость зависит от задачи. Подскажите, куда отправить
-                прайс-лист?
+                Стоимость зависит от задачи. Подскажите, куда отправить прайс-лист?
               </div>
 
               <div className="hero-message hero-message-user">+7 900 123-45-67</div>
