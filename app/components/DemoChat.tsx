@@ -94,6 +94,33 @@ function isBlockedName(value: string): boolean {
   return blocked.has(token);
 }
 
+function normalizeServiceIntent(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const value = raw.trim();
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+
+  // Canonical beauty categories
+  if (/(стриж|стричь|подстрич|пострич|haircut)/i.test(lower)) return "Стрижка";
+  if (/(окраш|тонир|балаяж|шатуш|airtouch)/i.test(lower)) return "Окрашивание";
+  if (/(маник|ногт)/i.test(lower)) return "Маникюр";
+  if (/(педик)/i.test(lower)) return "Педикюр";
+  if (/(бров|ресниц|ламинир)/i.test(lower)) return "Брови/ресницы";
+  if (/(лиц|чистк|пилинг|уход)/i.test(lower)) return "Уход за лицом";
+  if (/(массаж|spa|спа)/i.test(lower)) return "Массаж/SPA";
+
+  // Reject absurd/non-beauty phrases from lead card
+  const hasAbsurdBodyPart = /(колен|локт|пятк|ступн|живот|поясниц|плечо)/i.test(lower);
+  const hasBeautySignal = /(стриж|стричь|подстрич|пострич|окраш|маник|педик|бров|ресниц|лиц|уход|пилинг|массаж|spa|спа)/i.test(lower);
+  if (hasAbsurdBodyPart || !hasBeautySignal) return undefined;
+
+  if (value.length >= 3 && value.length <= 40) {
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  }
+
+  return undefined;
+}
+
 function extractServiceIntent(text: string): string | undefined {
   const lower = text.toLowerCase();
   const cleaned = text.trim();
@@ -173,7 +200,7 @@ export default function DemoChat() {
   const sendToAi = async (userText: string) => {
     const detectedPhone = extractPhone(userText);
     const rawName = extractNameSmart(userText);
-    const detectedService = extractServiceIntent(userText);
+    const detectedService = normalizeServiceIntent(extractServiceIntent(userText));
     const hasExplicitNameIntent = /(меня\s+зовут|my\s+name\s+is|i\s*am|i'm)/i.test(
       userText
     );
