@@ -1,6 +1,6 @@
 
 > automation-landing@0.1.0 dev
-> next dev
+> next dev --port 3001
 
 Error: spawn EPERM
     at ChildProcess.spawn (node:internal/child_process:421:11)

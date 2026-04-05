@@ -51,6 +51,26 @@ function extractPhone(text: string): string | undefined {
   return phone.startsWith("+") ? phone : `+${digits}`;
 }
 
+function extractNameSmart(text: string): string | undefined {
+  const cleaned = text.trim();
+  if (!cleaned) return undefined;
+
+  const phraseMatch =
+    cleaned.match(/(?:меня\s+зовут|я)\s+([A-Za-zА-Яа-яЁё-]{2,})/i) ||
+    cleaned.match(/(?:my\s+name\s+is|i\s*am|i'm)\s+([A-Za-zА-Яа-яЁё-]{2,})/i);
+
+  if (phraseMatch?.[1]) {
+    const value = phraseMatch[1].replace(/[^A-Za-zА-Яа-яЁё-]/g, "");
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  }
+
+  if (/^[A-Za-zА-Яа-яЁё-]{2,20}$/.test(cleaned)) {
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+
+  return undefined;
+}
+
 export default function DemoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [llmHistory, setLlmHistory] = useState<
@@ -101,7 +121,7 @@ export default function DemoChat() {
 
   const sendToAi = async (userText: string) => {
     const detectedPhone = extractPhone(userText);
-    const detectedName = extractName(userText);
+    const detectedName = extractNameSmart(userText);
 
     const updatedLead = {
       ...lead,
