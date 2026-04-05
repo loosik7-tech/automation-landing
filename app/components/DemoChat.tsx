@@ -71,6 +71,29 @@ function extractNameSmart(text: string): string | undefined {
   return undefined;
 }
 
+function normalizeToken(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, "").replace(/[^a-zа-яё-]/gi, "");
+}
+
+function isBlockedName(value: string): boolean {
+  const token = normalizeToken(value);
+  const blocked = new Set([
+    ...QUICK_OPTIONS.map((v) => normalizeToken(v)),
+    "услуги",
+    "консультация",
+    "вопрос",
+    "другое",
+    "запись",
+    "записьнаприем",
+    "прием",
+    "телефон",
+    "номер",
+    "цена",
+    "стоимость",
+  ]);
+  return blocked.has(token);
+}
+
 export default function DemoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [llmHistory, setLlmHistory] = useState<
@@ -121,7 +144,19 @@ export default function DemoChat() {
 
   const sendToAi = async (userText: string) => {
     const detectedPhone = extractPhone(userText);
-    const detectedName = extractNameSmart(userText);
+    const rawName = extractNameSmart(userText);
+    const hasExplicitNameIntent = /(меня\s+зовут|my\s+name\s+is|i\s*am|i'm)/i.test(
+      userText
+    );
+    const isSingleWordReply = userText.trim().split(/\s+/).length === 1;
+    const canCaptureName = hasExplicitNameIntent || (isSingleWordReply && !detectedPhone);
+    const detectedName =
+      canCaptureName &&
+      rawName &&
+      !isBlockedName(rawName) &&
+      !QUICK_OPTIONS.includes(userText)
+        ? rawName
+        : undefined;
 
     const updatedLead = {
       ...lead,
