@@ -102,6 +102,11 @@ function normalizeServiceIntent(raw: string | undefined): string | undefined {
   if (!value) return undefined;
   const lower = value.toLowerCase();
 
+  // Hard reject absurd body-part intents before any category match.
+  if (/(спин|колен|локт|пятк|ступн|живот|поясниц|плечо)/i.test(lower)) {
+    return undefined;
+  }
+
   // Canonical beauty categories
   if (/(стриж|стричь|подстрич|пострич|haircut)/i.test(lower)) return "Стрижка";
   if (/(окраш|тонир|балаяж|шатуш|airtouch)/i.test(lower)) return "Окрашивание";
@@ -121,6 +126,31 @@ function normalizeServiceIntent(raw: string | undefined): string | undefined {
   }
 
   return undefined;
+}
+
+function hasBookingIntent(text: string): boolean {
+  return /(запис|запись|завтра|сегодня|в\s*\d{1,2}|на\s*\d{1,2}|время|окно|свободн|прием)/i.test(
+    text
+  );
+}
+
+function isSuspiciousServiceRequest(text: string): boolean {
+  const lower = text.toLowerCase();
+  return /(спин|колен|локт|пятк|ступн|живот|поясниц|плечо)/i.test(lower);
+}
+
+function sanitizeAssistantReply(userText: string, reply: string): string {
+  if (!reply) return reply;
+  if (!isSuspiciousServiceRequest(userText)) return reply;
+
+  const confirmsWeHaveIt =
+    /(да|конечно|отлично).*(у нас есть|доступна|предоставляется|входит)/i.test(
+      reply
+    ) || /(стрижк[аи]\s+спин|услуг[аи]\s+.*спин)/i.test(reply.toLowerCase());
+
+  if (!confirmsWeHaveIt) return reply;
+
+  return "Похоже, запрос неоднозначный. Уточните, пожалуйста: Вас интересует стрижка волос или процедура ухода/депиляции для спины? Я подскажу самый подходящий вариант.";
 }
 
 function extractServiceIntent(text: string): string | undefined {
@@ -218,11 +248,7 @@ export default function DemoChat() {
 
     const updatedLead = {
       ...lead,
-      service:
-        lead.service ||
-        (QUICK_OPTIONS.includes(userText) ? userText : undefined) ||
-        detectedService ||
-        lead.service,
+      service: lead.service || detectedService || lead.service,
       name: lead.name || detectedName || lead.name,
       phone: lead.phone || detectedPhone || lead.phone,
     };
@@ -240,15 +266,26 @@ export default function DemoChat() {
         !updatedLead.name || !updatedLead.phone
           ? "lead_collection"
           : "free_conversation";
-      const reply = await askDeepSeek(updatedHistory, stage, updatedLead);
+      let reply = await askDeepSeek(updatedHistory, stage, updatedLead);
+      reply = sanitizeAssistantReply(userText, reply);
 
       // If the assistant clarified a concrete service (e.g. "цель обращения — педикюр"),
       // use that as fallback source for lead goal.
       const serviceFromReply = normalizeServiceIntent(extractServiceIntent(reply));
-      if (!updatedLead.service && serviceFromReply) {
-        setLead((prev) => ({ ...prev, service: serviceFromReply }));
-      } else if (!updatedLead.service && updatedLead.name && updatedLead.phone) {
-        setLead((prev) => ({ ...prev, service: SERVICE_NEEDS_CALLBACK }));
+      const bookingIntent = hasBookingIntent(userText) || hasBookingIntent(reply);
+
+      let resolvedService = updatedLead.service || serviceFromReply;
+      if (bookingIntent) {
+        resolvedService =
+          resolvedService && !/^запись на прием/i.test(resolvedService)
+            ? `Запись на прием: ${resolvedService}`
+            : "Запись на прием";
+      }
+      if (!resolvedService && updatedLead.name && updatedLead.phone) {
+        resolvedService = SERVICE_NEEDS_CALLBACK;
+      }
+      if (resolvedService && resolvedService !== lead.service) {
+        setLead((prev) => ({ ...prev, service: resolvedService as string }));
       }
 
       setLlmHistory([
