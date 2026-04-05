@@ -94,6 +94,34 @@ function isBlockedName(value: string): boolean {
   return blocked.has(token);
 }
 
+function extractServiceIntent(text: string): string | undefined {
+  const lower = text.toLowerCase();
+  const cleaned = text.trim();
+  if (!cleaned) return undefined;
+
+  if (/стриж|подстричь|haircut/.test(lower)) return "Стрижка";
+  if (/окраш|тонир|балаяж|шатуш|airtouch/.test(lower)) return "Окрашивание";
+  if (/маник|ногт/.test(lower)) return "Маникюр";
+  if (/педик/.test(lower)) return "Педикюр";
+  if (/бров|ресниц|ламинир/.test(lower)) return "Брови/ресницы";
+  if (/лиц|чистк|пилинг|уход/.test(lower)) return "Уход за лицом";
+  if (/массаж|spa|спа/.test(lower)) return "Массаж/SPA";
+
+  // Generic intent: "хочу записаться на ...", "нужна ..."
+  const generic =
+    cleaned.match(/(?:хочу|нужна|нужен|интересует|записаться\s+на)\s+([A-Za-zА-Яа-яЁё0-9\s-]{3,40})/i) ||
+    cleaned.match(/(?:по|насчет|по поводу)\s+([A-Za-zА-Яа-яЁё0-9\s-]{3,40})/i);
+
+  if (generic?.[1]) {
+    const service = generic[1].trim().replace(/[.,!?;:]+$/g, "");
+    if (service.length >= 3 && service.length <= 40) {
+      return service.charAt(0).toUpperCase() + service.slice(1);
+    }
+  }
+
+  return undefined;
+}
+
 export default function DemoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [llmHistory, setLlmHistory] = useState<
@@ -145,6 +173,7 @@ export default function DemoChat() {
   const sendToAi = async (userText: string) => {
     const detectedPhone = extractPhone(userText);
     const rawName = extractNameSmart(userText);
+    const detectedService = extractServiceIntent(userText);
     const hasExplicitNameIntent = /(меня\s+зовут|my\s+name\s+is|i\s*am|i'm)/i.test(
       userText
     );
@@ -162,7 +191,9 @@ export default function DemoChat() {
       ...lead,
       service:
         lead.service ||
-        (QUICK_OPTIONS.includes(userText) ? userText : lead.service),
+        (QUICK_OPTIONS.includes(userText) ? userText : undefined) ||
+        detectedService ||
+        lead.service,
       name: lead.name || detectedName || lead.name,
       phone: lead.phone || detectedPhone || lead.phone,
     };
