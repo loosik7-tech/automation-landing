@@ -209,6 +209,8 @@ export default function DemoChat() {
   const [inputVal, setInputVal] = useState("");
   const [lead, setLead] = useState<Record<string, string>>({});
   const [typing, setTyping] = useState(false);
+  const [awaitingName, setAwaitingName] = useState(false);
+  const [awaitingPhone, setAwaitingPhone] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const sectionRef = useScrollReveal();
 
@@ -252,7 +254,9 @@ export default function DemoChat() {
   const sendToAi = async (userText: string) => {
     const detectedPhone = extractPhone(userText);
     const rawName = extractNameSmart(userText);
-    const isGenericOption = QUICK_OPTIONS.includes(userText);
+    const isGenericOption =
+      QUICK_OPTIONS.includes(userText) ||
+      /(услуг|услуги|прайс|цены)/i.test(userText);
     const detectedService = isGenericOption
       ? undefined
       : normalizeServiceIntent(extractServiceIntent(userText));
@@ -260,10 +264,16 @@ export default function DemoChat() {
       userText
     );
     const isSingleWordReply = userText.trim().split(/\s+/).length === 1;
-    const canCaptureName = hasExplicitNameIntent || (isSingleWordReply && !detectedPhone);
+    const isServiceLikeName =
+      /(стриж|маник|педик|бров|ресниц|услуг|запис|уход|spa|массаж)/i.test(userText);
+    const canCaptureName =
+      (hasExplicitNameIntent ||
+        (awaitingName && isSingleWordReply && !detectedPhone)) &&
+      !isServiceLikeName;
     const detectedName =
       canCaptureName &&
       rawName &&
+      !detectedService &&
       !isBlockedName(rawName) &&
       !QUICK_OPTIONS.includes(userText)
         ? rawName
@@ -276,6 +286,8 @@ export default function DemoChat() {
       phone: lead.phone || detectedPhone || lead.phone,
     };
     setLead(updatedLead);
+    if (detectedName) setAwaitingName(false);
+    if (detectedPhone) setAwaitingPhone(false);
 
     setTyping(true);
     scrollToBottom();
@@ -301,10 +313,10 @@ export default function DemoChat() {
         !isServiceList(reply)
           ? normalizeServiceIntent(serviceFromReplyRaw)
           : undefined;
-      const bookingIntent = hasBookingIntent(userText) || hasBookingIntent(reply);
+      const bookingIntent = hasBookingIntent(userText);
 
       let resolvedService = updatedLead.service || serviceFromReply;
-      if (bookingIntent) {
+      if (bookingIntent && resolvedService) {
         resolvedService =
           resolvedService && !/^запись на прием/i.test(resolvedService)
             ? `Запись на прием: ${resolvedService}`
@@ -316,6 +328,11 @@ export default function DemoChat() {
       if (resolvedService && resolvedService !== lead.service) {
         setLead((prev) => ({ ...prev, service: resolvedService as string }));
       }
+
+      const asksName = /(как\s+вас\s+зовут|ваше\s+имя|имя\s+клиента)/i.test(reply);
+      const asksPhone = /(номер\s+телефона|телефон\s+для\s+связи|контактн(ый|ого)\s+номер|ваш\s+номер)/i.test(reply);
+      setAwaitingName(asksName);
+      setAwaitingPhone(asksPhone);
 
       setLlmHistory([
         ...updatedHistory,
@@ -354,6 +371,8 @@ export default function DemoChat() {
     setInputVal("");
     setMessages([]);
     setLlmHistory([]);
+    setAwaitingName(false);
+    setAwaitingPhone(false);
     void initGreeting();
   };
 
