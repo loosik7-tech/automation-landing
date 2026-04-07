@@ -1,99 +1,87 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
 type ChatMessage = {
   role: "system" | "user" | "assistant";
   content: string;
 };
 
+type LeadUpdate = {
+  service?: string;
+  name?: string;
+  phone?: string;
+};
+
+type AssistantEnvelope = {
+  reply: string;
+  lead_update?: LeadUpdate;
+  needs_clarification?: boolean;
+  confidence?: number;
+};
+
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
-const SYSTEM_PROMPT = `
-Ты — онлайн-консультант салона красоты. Работаешь как живой администратор.
+const SYSTEM_PROMPT = `You are a beauty salon assistant.
 
-Задача:
-- помогать клиенту
-- отвечать коротко и по делу
-- вести к записи
-- собрать: цель обращения, имя, телефон
+Return ONLY valid JSON with this shape:
+{
+  "reply": "string (Russian, natural, concise)",
+  "lead_update": { "service"?: "string", "name"?: "string", "phone"?: "string" },
+  "needs_clarification": boolean,
+  "confidence": number
+}
 
-Стиль:
-- дружелюбно, естественно, без канцелярита
-- 1-3 предложения
-- всегда обращение на "Вы" (с большой буквы)
-- не отвечай "спасибо" на запрос пользователя; вместо этого используй "Понял" или сразу задавай уточнение
+Rules:
+- Be natural, not robotic.
+- Do not start every message with "Понял".
+- If request is absurd/ambiguous (e.g. "стрижка пятки"), do NOT set service. Ask clarification instead.
+- Do not invent services, prices or facts.
+- If user did not provide a field, do not fabricate it.
+- confidence is 0..1.
+- JSON only, no markdown, no extra text.`;
 
-Ключевые правила качества:
-1) НЕ выдумывай услуги, цены и условия.
-2) Отвечай только по каталогу услуг ниже.
-3) Если запрос спорный/странный/нерелевантный (например "стрижка спины"), не подтверждай как услугу.
-4) В спорном случае задай уточняющий вопрос и предложи ближайшие валидные варианты.
-5) Не превращай мусорный/абсурдный запрос в "цель обращения".
+function pickFirstJsonObject(text: string): string | null {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  return text.slice(start, end + 1);
+}
 
-Каталог услуг:
-- Стрижка — от 1800 ₽
-- Маникюр с покрытием — 2200 ₽
-- Педикюр — 2500 ₽
-- Брови — 1200 ₽
-- Уход за лицом — 3000 ₽
+function sanitizeEnvelope(raw: unknown): AssistantEnvelope {
+  const base: AssistantEnvelope = {
+    reply: "Уточню запрос и помогу подобрать подходящую услугу.",
+    lead_update: {},
+    needs_clarification: true,
+    confidence: 0.3,
+  };
 
-Адрес: Москва, ул. Примерная 10
-Время: 10:00-21:00
+  if (!raw || typeof raw !== "object") return base;
+  const obj = raw as Record<string, unknown>;
 
-Дополнительные закрепляющие правила качества:
-Твоя задача — вести диалог максимально точно, логично и профессионально, избегая ошибок, догадок и нелепых интерпретаций.
+  const reply = typeof obj.reply === "string" ? obj.reply.trim() : "";
+  const needsClarification = typeof obj.needs_clarification === "boolean" ? obj.needs_clarification : true;
+  const confidence = typeof obj.confidence === "number" ? Math.max(0, Math.min(1, obj.confidence)) : 0.3;
 
-1) Понимание запроса:
-- анализируй смысл запроса, а не только ключевые слова;
-- если запрос странный/неоднозначный/нерелевантный — НЕ подтверждай автоматически;
-- вместо этого: вежливо уточни или предложи ближайшие релевантные услуги.
+  const leadUpdate: LeadUpdate = {};
+  if (obj.lead_update && typeof obj.lead_update === "object") {
+    const lu = obj.lead_update as Record<string, unknown>;
+    if (typeof lu.service === "string" && lu.service.trim()) leadUpdate.service = lu.service.trim();
+    if (typeof lu.name === "string" && lu.name.trim()) leadUpdate.name = lu.name.trim();
+    if (typeof lu.phone === "string" && lu.phone.trim()) leadUpdate.phone = lu.phone.trim();
+  }
 
-2) Проверка здравого смысла перед ответом:
-- существует ли такая услуга в рамках салона;
-- не противоречит ли это логике бизнеса;
-- не выглядит ли это как ошибка пользователя.
-Если есть сомнения — уточняй, а не утверждай.
-
-3) Диалоговая стратегия:
-- сначала понять запрос;
-- затем уточнить детали (если нужно);
-- потом предложить решение;
-- и только после этого переходить к записи.
-
-4) Уточняющие вопросы обязательны, если:
-- запрос неполный;
-- запрос странный;
-- есть несколько интерпретаций.
-Формат вопросов: коротко, вежливо, по делу.
-
-5) Запрет на галлюцинации:
-- никогда не придумывай услуги, цены и факты;
-- если не уверен — честно скажи и предложи уточнение.
-
-6) Тон:
-- вежливый, уверенный, живой;
-- без шаблонной «ботовости» и без навязчивости.
-
-7) Контроль качества перед каждым ответом:
-- я правильно понял запрос?
-- я ничего не выдумал?
-- мой ответ логичен?
-- я не сделал глупого предположения?
-Если есть сомнения — уточни у пользователя.
-
-8) Цель:
-- помочь пользователю максимально точно;
-- избегать «глупых» ответов;
-- создавать ощущение диалога с умным человеком, а не со скриптом.
-`.trim();
+  return {
+    reply: reply || base.reply,
+    lead_update: leadUpdate,
+    needs_clarification: needsClarification,
+    confidence,
+  };
+}
 
 export async function POST(req: Request) {
   try {
     const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "DEEPSEEK_API_KEY is not set on server" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "DEEPSEEK_API_KEY is not set on server" }, { status: 500 });
     }
 
     const body = (await req.json()) as {
@@ -107,12 +95,12 @@ export async function POST(req: Request) {
     const lead = body.lead ?? {};
 
     const leadContext = Object.keys(lead).length
-      ? `\n\nУже известные данные клиента:${lead.service ? ` цель: ${lead.service}` : ""}${lead.name ? `, имя: ${lead.name}` : ""}${lead.phone ? `, телефон: ${lead.phone}` : ""}. Не спрашивайте повторно то, что уже известно.`
-      : "";
+      ? `Known lead data: ${lead.service ? `service=${lead.service}; ` : ""}${lead.name ? `name=${lead.name}; ` : ""}${lead.phone ? `phone=${lead.phone}; ` : ""}`
+      : "Known lead data: none.";
 
     const systemPrompt: ChatMessage = {
       role: "system",
-      content: `${SYSTEM_PROMPT}\n\nТекущий этап диалога: ${stage}.${leadContext}`,
+      content: `${SYSTEM_PROMPT}\n\nCurrent stage: ${stage}.\n${leadContext}`,
     };
 
     const messages: ChatMessage[] = [systemPrompt, ...incomingMessages].slice(-20);
@@ -125,33 +113,35 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: "deepseek-chat",
-        temperature: 0.45,
-        max_tokens: 260,
+        temperature: 0.35,
+        max_tokens: 300,
         messages,
       }),
     });
 
     if (!dsResp.ok) {
       const errText = await dsResp.text();
-      return NextResponse.json(
-        { error: "DeepSeek request failed", details: errText },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: "DeepSeek request failed", details: errText }, { status: 502 });
     }
 
     const data = (await dsResp.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
 
-    const reply =
-      data.choices?.[0]?.message?.content?.trim() ||
-      "Уточню у администратора и вернусь к Вам.";
+    const content = data.choices?.[0]?.message?.content?.trim() || "";
+    const jsonCandidate = pickFirstJsonObject(content);
 
-    return NextResponse.json({ reply });
+    let envelope = sanitizeEnvelope(undefined);
+    if (jsonCandidate) {
+      try {
+        envelope = sanitizeEnvelope(JSON.parse(jsonCandidate));
+      } catch {
+        envelope = sanitizeEnvelope(undefined);
+      }
+    }
+
+    return NextResponse.json(envelope);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Unexpected server error", details: String(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Unexpected server error", details: String(error) }, { status: 500 });
   }
 }
