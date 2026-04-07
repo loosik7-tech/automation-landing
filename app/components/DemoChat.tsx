@@ -1,28 +1,27 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 
 type Message = { id: number; type: "bot" | "user"; text: string };
-type BookingStep = "service" | "name" | "phone" | "done";
 
 const QUICK_OPTIONS = [
-  "РљРѕРЅСЃСѓР»СЊС‚Р°С†РёСЏ",
-  "Р—Р°РїРёСЃСЊ РЅР° РїСЂРёРµРј",
-  "РЈСЃР»СѓРіРё",
-  "Р’РѕРїСЂРѕСЃ",
-  "Р”СЂСѓРіРѕРµ",
+  "Консультация",
+  "Запись на прием",
+  "Услуги",
+  "Вопрос",
+  "Другое",
 ];
 
 const ABSURD_REQUEST_RE =
-  /(СЏРёС†|СЏР№С†|РїРµРЅРёСЃ|С‡Р»РµРЅ|РёРЅС‚РёРј|РїР°С…|Р¶РѕРї|Р·Р°РґРЅРёС†|СЃРµРєСЃ|СЌСЂРѕС‚|Р°РЅСѓСЃ|РіРµРЅРёС‚Р°Р»|РїРёР·Рґ|С…СѓР№|РґРёС‡СЊ)/i;
+  /(яиц|яйц|пенис|член|интим|пах|жоп|задниц|секс|эрот|анус|генитал|пизд|хуй|дичь)/i;
 
 const FALLBACK_GREETING =
-  "Р—РґСЂР°РІСЃС‚РІСѓР№С‚Рµ! РЇ РѕРЅР»Р°Р№РЅ-РєРѕРЅСЃСѓР»СЊС‚Р°РЅС‚ СЃР°Р»РѕРЅР°. РџРѕРґСЃРєР°Р¶Сѓ РїРѕ СѓСЃР»СѓРіР°Рј, С†РµРЅР°Рј Рё Р·Р°РїРёСЃРё.";
+  "Здравствуйте! Я онлайн-консультант салона. Подскажу по услугам, ценам и записи.";
 const ASK_AI_FALLBACK =
-  "РџРѕРЅСЏР» РІР°СЃ. РЈС‚РѕС‡РЅРёС‚Рµ, РїРѕР¶Р°Р»СѓР№СЃС‚Р°, Р·Р°РїСЂРѕСЃ, Рё СЏ РїРѕРјРѕРіСѓ СЃ РІС‹Р±РѕСЂРѕРј РёР»Рё Р·Р°РїРёСЃСЊСЋ.";
+  "Понял вас. Уточните, пожалуйста, запрос, и я помогу с выбором или записью.";
 
-const SERVICE_NEEDS_CALLBACK = "РќСѓР¶РµРЅ Р·РІРѕРЅРѕРє РґР»СЏ СѓС‚РѕС‡РЅРµРЅРёСЏ СѓСЃР»СѓРіРё";
+const SERVICE_NEEDS_CALLBACK = "Нужен звонок для уточнения услуги";
 
 async function askDeepSeek(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
@@ -49,37 +48,37 @@ function buildFallbackReply(params: {
 }) {
   const { userText, lead, detectedService, bookingIntent, isAbsurd } = params;
   if (isAbsurd) {
-    return "РџРѕС…РѕР¶Рµ, Р·Р°РїСЂРѕСЃ РЅРµ СЃРѕРІСЃРµРј РїСЂРѕ СѓСЃР»СѓРіРё СЃР°Р»РѕРЅР°. РЈС‚РѕС‡РЅРёС‚Рµ, РїРѕР¶Р°Р»СѓР№СЃС‚Р°, С‡С‚Рѕ РёРјРµРЅРЅРѕ Р’С‹ С…РѕС‚РёС‚Рµ, Рё СЏ РїРѕРґСЃРєР°Р¶Сѓ РїРѕРґС…РѕРґСЏС‰РёР№ РІР°СЂРёР°РЅС‚.";
+    return "Похоже, запрос не совсем про услуги салона. Уточните, пожалуйста, что именно Вы хотите, и я подскажу подходящий вариант.";
   }
 
   const priceMap: Record<string, string> = {
-    "РЎС‚СЂРёР¶РєР°": "РѕС‚ 1800 в‚Ѕ",
-    "РњР°РЅРёРєСЋСЂ": "2200 в‚Ѕ",
-    "РџРµРґРёРєСЋСЂ": "2500 в‚Ѕ",
-    "Р‘СЂРѕРІРё/СЂРµСЃРЅРёС†С‹": "1200 в‚Ѕ",
-    "РЈС…РѕРґ Р·Р° Р»РёС†РѕРј": "3000 в‚Ѕ",
+    "Стрижка": "от 1800 ₽",
+    "Маникюр": "2200 ₽",
+    "Педикюр": "2500 ₽",
+    "Брови/ресницы": "1200 ₽",
+    "Уход за лицом": "3000 ₽",
   };
 
   if (detectedService) {
     const price = priceMap[detectedService];
     if (bookingIntent) {
-      return `РџРѕРЅСЏР». ${detectedService}${price ? ` вЂ” ${price}` : ""}. РљР°Рє Р’Р°СЃ Р·РѕРІСѓС‚?`;
+      return `Понял. ${detectedService}${price ? ` — ${price}` : ""}. Как Вас зовут?`;
     }
     return price
-      ? `${detectedService} вЂ” ${price}. РҐРѕС‚РёС‚Рµ Р·Р°РїРёСЃР°С‚СЊСЃСЏ РЅР° СѓРґРѕР±РЅРѕРµ РІСЂРµРјСЏ?`
-      : `РџРѕРЅСЏР», РёРЅС‚РµСЂРµСЃСѓРµС‚ ${detectedService}. РҐРѕС‚РёС‚Рµ Р·Р°РїРёСЃР°С‚СЊСЃСЏ?`;
+      ? `${detectedService} — ${price}. Хотите записаться на удобное время?`
+      : `Понял, интересует ${detectedService}. Хотите записаться?`;
   }
 
   if (!lead.name) {
-    return "РџРѕРЅСЏР». РљР°Рє Р’Р°СЃ Р·РѕРІСѓС‚?";
+    return "Понял. Как Вас зовут?";
   }
 
   if (!lead.phone) {
-    return "РџРѕРґСЃРєР°Р¶РёС‚Рµ, РїРѕР¶Р°Р»СѓР№СЃС‚Р°, Р’Р°С€ РЅРѕРјРµСЂ С‚РµР»РµС„РѕРЅР° РґР»СЏ СЃРІСЏР·Рё.";
+    return "Подскажите, пожалуйста, Ваш номер телефона для связи.";
   }
 
-  if (/Р·Р°РІС‚СЂР°|СЃРµРіРѕРґРЅСЏ|РЅР°\s*\d{1,2}|РІ\s*\d{1,2}/i.test(userText)) {
-    return "РџРѕРЅСЏР». РќР° РєР°РєРѕРµ РІСЂРµРјСЏ Р’Р°Рј Р±СѓРґРµС‚ СѓРґРѕР±РЅРѕ? РџРѕСЃР»Рµ СЌС‚РѕРіРѕ РїРѕРґС‚РІРµСЂР¶Сѓ Р·Р°РїРёСЃСЊ.";
+  if (/завтра|сегодня|на\s*\d{1,2}|в\s*\d{1,2}/i.test(userText)) {
+    return "Понял. На какое время Вам будет удобно? После этого подтвержу запись.";
   }
 
   return ASK_AI_FALLBACK;
@@ -88,8 +87,8 @@ function buildFallbackReply(params: {
 function extractName(text: string): string | undefined {
   const lower = text.toLowerCase();
   const match =
-    lower.match(/меня\s+зовут\s+([\p{L}-]+)/iu) ||
-    lower.match(/я\s+([\p{L}-]{2,})/iu);
+    lower.match(/меня зовут\s+([а-яёa-z-]+)/i) ||
+    lower.match(/я\s+([а-яёa-z-]{2,})/i);
   if (!match?.[1]) return undefined;
   const raw = match[1];
   return raw.charAt(0).toUpperCase() + raw.slice(1);
@@ -107,15 +106,15 @@ function extractNameSmart(text: string): string | undefined {
   if (!cleaned) return undefined;
 
   const phraseMatch =
-    cleaned.match(/(?:меня\s+зовут|я)\s+([\p{L}-]{2,})/iu) ||
-    cleaned.match(/(?:my\s+name\s+is|i\s*am|i'm)\s+([\p{L}-]{2,})/iu);
+    cleaned.match(/(?:меня\s+зовут|я)\s+([A-Za-zА-Яа-яЁё-]{2,})/i) ||
+    cleaned.match(/(?:my\s+name\s+is|i\s*am|i'm)\s+([A-Za-zА-Яа-яЁё-]{2,})/i);
 
   if (phraseMatch?.[1]) {
-    const value = phraseMatch[1].replace(/[^\p{L}-]/gu, "");
+    const value = phraseMatch[1].replace(/[^A-Za-zА-Яа-яЁё-]/g, "");
     return value.charAt(0).toUpperCase() + value.slice(1);
   }
 
-  if (/^[\p{L}-]{2,20}$/u.test(cleaned)) {
+  if (/^[A-Za-zА-Яа-яЁё-]{2,20}$/.test(cleaned)) {
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
 
@@ -123,24 +122,24 @@ function extractNameSmart(text: string): string | undefined {
 }
 
 function normalizeToken(value: string): string {
-  return value.toLowerCase().replace(/\s+/g, "").replace(/[^\p{L}\p{N}-]/gu, "");
+  return value.toLowerCase().replace(/\s+/g, "").replace(/[^a-zа-яё-]/gi, "");
 }
 
 function isBlockedName(value: string): boolean {
   const token = normalizeToken(value);
   const blocked = new Set([
     ...QUICK_OPTIONS.map((v) => normalizeToken(v)),
-    "СѓСЃР»СѓРіРё",
-    "РєРѕРЅСЃСѓР»СЊС‚Р°С†РёСЏ",
-    "РІРѕРїСЂРѕСЃ",
-    "РґСЂСѓРіРѕРµ",
-    "Р·Р°РїРёСЃСЊ",
-    "Р·Р°РїРёСЃСЊРЅР°РїСЂРёРµРј",
-    "РїСЂРёРµРј",
-    "С‚РµР»РµС„РѕРЅ",
-    "РЅРѕРјРµСЂ",
-    "С†РµРЅР°",
-    "СЃС‚РѕРёРјРѕСЃС‚СЊ",
+    "услуги",
+    "консультация",
+    "вопрос",
+    "другое",
+    "запись",
+    "записьнаприем",
+    "прием",
+    "телефон",
+    "номер",
+    "цена",
+    "стоимость",
   ]);
   return blocked.has(token);
 }
@@ -152,22 +151,22 @@ function normalizeServiceIntent(raw: string | undefined): string | undefined {
   const lower = value.toLowerCase();
 
   // Hard reject absurd body-part intents before any category match.
-  if (/(СЃРїРёРЅ|РєРѕР»РµРЅ|Р»РѕРєС‚|РїСЏС‚Рє|СЃС‚СѓРїРЅ|Р¶РёРІРѕС‚|РїРѕСЏСЃРЅРёС†|РїР»РµС‡Рѕ)/i.test(lower)) {
+  if (/(спин|колен|локт|пятк|ступн|живот|поясниц|плечо)/i.test(lower)) {
     return undefined;
   }
 
   // Canonical beauty categories
-  if (/(СЃС‚СЂРёР¶|СЃС‚СЂРёС‡СЊ|РїРѕРґСЃС‚СЂРёС‡|РїРѕСЃС‚СЂРёС‡|haircut)/i.test(lower)) return "РЎС‚СЂРёР¶РєР°";
-  if (/(РѕРєСЂР°С€|С‚РѕРЅРёСЂ|Р±Р°Р»Р°СЏР¶|С€Р°С‚СѓС€|airtouch)/i.test(lower)) return "РћРєСЂР°С€РёРІР°РЅРёРµ";
-  if (/(РјР°РЅРёРє|РЅРѕРіС‚)/i.test(lower)) return "РњР°РЅРёРєСЋСЂ";
-  if (/(РїРµРґРёРє)/i.test(lower)) return "РџРµРґРёРєСЋСЂ";
-  if (/(Р±СЂРѕРІ|СЂРµСЃРЅРёС†|Р»Р°РјРёРЅРёСЂ)/i.test(lower)) return "Р‘СЂРѕРІРё/СЂРµСЃРЅРёС†С‹";
-  if (/(Р»РёС†|С‡РёСЃС‚Рє|РїРёР»РёРЅРі|СѓС…РѕРґ)/i.test(lower)) return "РЈС…РѕРґ Р·Р° Р»РёС†РѕРј";
-  if (/(РјР°СЃСЃР°Р¶|spa|СЃРїР°)/i.test(lower)) return "РњР°СЃСЃР°Р¶/SPA";
+  if (/(стриж|стричь|подстрич|пострич|haircut)/i.test(lower)) return "Стрижка";
+  if (/(окраш|тонир|балаяж|шатуш|airtouch)/i.test(lower)) return "Окрашивание";
+  if (/(маник|ногт)/i.test(lower)) return "Маникюр";
+  if (/(педик)/i.test(lower)) return "Педикюр";
+  if (/(бров|ресниц|ламинир)/i.test(lower)) return "Брови/ресницы";
+  if (/(лиц|чистк|пилинг|уход)/i.test(lower)) return "Уход за лицом";
+  if (/(массаж|spa|спа)/i.test(lower)) return "Массаж/SPA";
 
   // Reject absurd/non-beauty phrases from lead card
-  const hasAbsurdBodyPart = /(РєРѕР»РµРЅ|Р»РѕРєС‚|РїСЏС‚Рє|СЃС‚СѓРїРЅ|Р¶РёРІРѕС‚|РїРѕСЏСЃРЅРёС†|РїР»РµС‡Рѕ)/i.test(lower);
-  const hasBeautySignal = /(СЃС‚СЂРёР¶|СЃС‚СЂРёС‡СЊ|РїРѕРґСЃС‚СЂРёС‡|РїРѕСЃС‚СЂРёС‡|РѕРєСЂР°С€|РјР°РЅРёРє|РїРµРґРёРє|Р±СЂРѕРІ|СЂРµСЃРЅРёС†|Р»РёС†|СѓС…РѕРґ|РїРёР»РёРЅРі|РјР°СЃСЃР°Р¶|spa|СЃРїР°)/i.test(lower);
+  const hasAbsurdBodyPart = /(колен|локт|пятк|ступн|живот|поясниц|плечо)/i.test(lower);
+  const hasBeautySignal = /(стриж|стричь|подстрич|пострич|окраш|маник|педик|бров|ресниц|лиц|уход|пилинг|массаж|spa|спа)/i.test(lower);
   if (hasAbsurdBodyPart || !hasBeautySignal) return undefined;
 
   if (value.length >= 3 && value.length <= 40) {
@@ -178,32 +177,32 @@ function normalizeServiceIntent(raw: string | undefined): string | undefined {
 }
 
 function hasBookingIntent(text: string): boolean {
-  return /(Р·Р°РїРёСЃ|Р·Р°РїРёСЃСЊ|Р·Р°РІС‚СЂР°|СЃРµРіРѕРґРЅСЏ|РІ\s*\d{1,2}|РЅР°\s*\d{1,2}|РІСЂРµРјСЏ|РѕРєРЅРѕ|СЃРІРѕР±РѕРґРЅ|РїСЂРёРµРј)/i.test(
+  return /(запис|запись|завтра|сегодня|в\s*\d{1,2}|на\s*\d{1,2}|время|окно|свободн|прием)/i.test(
     text
   );
 }
 
 function isSuspiciousServiceRequest(text: string): boolean {
   const lower = text.toLowerCase();
-  return /(СЃРїРёРЅ|РєРѕР»РµРЅ|Р»РѕРєС‚|РїСЏС‚Рє|СЃС‚СѓРїРЅ|Р¶РёРІРѕС‚|РїРѕСЏСЃРЅРёС†|РїР»РµС‡Рѕ)/i.test(lower);
+  return /(спин|колен|локт|пятк|ступн|живот|поясниц|плечо)/i.test(lower);
 }
 
 function isExplicitServiceConfirmation(text: string): boolean {
-  return /(С†РµР»СЊ РѕР±СЂР°С‰РµРЅРёСЏ|СѓСЃР»СѓРіР°:|СЌС‚Рѕ Р±СѓРґРµС‚|Р·Р°РїРёСЃСЊ РЅР°)/i.test(text);
+  return /(цель обращения|услуга:|это будет|запись на)/i.test(text);
 }
 
 function isServiceList(text: string): boolean {
   const lower = text.toLowerCase();
   const hits = [
-    /СЃС‚СЂРёР¶/gi,
-    /РјР°РЅРёРє/gi,
-    /РїРµРґРёРє/gi,
-    /Р±СЂРѕРІ/gi,
-    /СЂРµСЃРЅРёС†/gi,
-    /СѓС…РѕРґ/gi,
-    /РїРёР»РёРЅРі/gi,
-    /РјР°СЃСЃР°Р¶/gi,
-    /РѕРєСЂР°С€/gi,
+    /стриж/gi,
+    /маник/gi,
+    /педик/gi,
+    /бров/gi,
+    /ресниц/gi,
+    /уход/gi,
+    /пилинг/gi,
+    /массаж/gi,
+    /окраш/gi,
   ].reduce((acc, re) => acc + ((lower.match(re) || []).length > 0 ? 1 : 0), 0);
   return hits >= 2;
 }
@@ -211,19 +210,19 @@ function isServiceList(text: string): boolean {
 function sanitizeAssistantReply(userText: string, reply: string): string {
   if (!reply) return reply;
   let cleaned = reply.trim();
-  if (/^СЃРїР°СЃРёР±Рѕ[!.,\s]/i.test(cleaned)) {
-    cleaned = cleaned.replace(/^СЃРїР°СЃРёР±Рѕ[!.,\s]*/i, "РџРѕРЅСЏР». ");
+  if (/^спасибо[!.,\s]/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^спасибо[!.,\s]*/i, "Понял. ");
   }
   if (!isSuspiciousServiceRequest(userText)) return cleaned;
 
   const confirmsWeHaveIt =
-    /(РґР°|РєРѕРЅРµС‡РЅРѕ|РѕС‚Р»РёС‡РЅРѕ).*(Сѓ РЅР°СЃ РµСЃС‚СЊ|РґРѕСЃС‚СѓРїРЅР°|РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚СЃСЏ|РІС…РѕРґРёС‚)/i.test(
+    /(да|конечно|отлично).*(у нас есть|доступна|предоставляется|входит)/i.test(
       reply
-    ) || /(СЃС‚СЂРёР¶Рє[Р°Рё]\s+СЃРїРёРЅ|СѓСЃР»СѓРі[Р°Рё]\s+.*СЃРїРёРЅ)/i.test(reply.toLowerCase());
+    ) || /(стрижк[аи]\s+спин|услуг[аи]\s+.*спин)/i.test(reply.toLowerCase());
 
   if (!confirmsWeHaveIt) return cleaned;
 
-  return "РџРѕС…РѕР¶Рµ, Р·Р°РїСЂРѕСЃ РЅРµРѕРґРЅРѕР·РЅР°С‡РЅС‹Р№. РЈС‚РѕС‡РЅРёС‚Рµ, РїРѕР¶Р°Р»СѓР№СЃС‚Р°: Р’Р°СЃ РёРЅС‚РµСЂРµСЃСѓРµС‚ СЃС‚СЂРёР¶РєР° РІРѕР»РѕСЃ РёР»Рё РїСЂРѕС†РµРґСѓСЂР° СѓС…РѕРґР°/РґРµРїРёР»СЏС†РёРё РґР»СЏ СЃРїРёРЅС‹? РЇ РїРѕРґСЃРєР°Р¶Сѓ СЃР°РјС‹Р№ РїРѕРґС…РѕРґСЏС‰РёР№ РІР°СЂРёР°РЅС‚.";
+  return "Похоже, запрос неоднозначный. Уточните, пожалуйста: Вас интересует стрижка волос или процедура ухода/депиляции для спины? Я подскажу самый подходящий вариант.";
 }
 
 function extractServiceIntent(text: string): string | undefined {
@@ -231,18 +230,18 @@ function extractServiceIntent(text: string): string | undefined {
   const cleaned = text.trim();
   if (!cleaned) return undefined;
 
-  if (/СЃС‚СЂРёР¶|РїРѕРґСЃС‚СЂРёС‡СЊ|haircut/.test(lower)) return "РЎС‚СЂРёР¶РєР°";
-  if (/РѕРєСЂР°С€|С‚РѕРЅРёСЂ|Р±Р°Р»Р°СЏР¶|С€Р°С‚СѓС€|airtouch/.test(lower)) return "РћРєСЂР°С€РёРІР°РЅРёРµ";
-  if (/РјР°РЅРёРє|РЅРѕРіС‚/.test(lower)) return "РњР°РЅРёРєСЋСЂ";
-  if (/РїРµРґРёРє/.test(lower)) return "РџРµРґРёРєСЋСЂ";
-  if (/Р±СЂРѕРІ|СЂРµСЃРЅРёС†|Р»Р°РјРёРЅРёСЂ/.test(lower)) return "Р‘СЂРѕРІРё/СЂРµСЃРЅРёС†С‹";
-  if (/Р»РёС†|С‡РёСЃС‚Рє|РїРёР»РёРЅРі|СѓС…РѕРґ/.test(lower)) return "РЈС…РѕРґ Р·Р° Р»РёС†РѕРј";
-  if (/РјР°СЃСЃР°Р¶|spa|СЃРїР°/.test(lower)) return "РњР°СЃСЃР°Р¶/SPA";
+  if (/стриж|подстричь|haircut/.test(lower)) return "Стрижка";
+  if (/окраш|тонир|балаяж|шатуш|airtouch/.test(lower)) return "Окрашивание";
+  if (/маник|ногт/.test(lower)) return "Маникюр";
+  if (/педик/.test(lower)) return "Педикюр";
+  if (/бров|ресниц|ламинир/.test(lower)) return "Брови/ресницы";
+  if (/лиц|чистк|пилинг|уход/.test(lower)) return "Уход за лицом";
+  if (/массаж|spa|спа/.test(lower)) return "Массаж/SPA";
 
-  // Generic intent: "С…РѕС‡Сѓ Р·Р°РїРёСЃР°С‚СЊСЃСЏ РЅР° ...", "РЅСѓР¶РЅР° ..."
+  // Generic intent: "хочу записаться на ...", "нужна ..."
   const generic =
-    cleaned.match(/(?:хочу|нужна|нужен|интересует|записаться\s+на)\s+([\p{L}\p{N}\s-]{3,40})/iu) ||
-    cleaned.match(/(?:по|насчет|по поводу)\s+([\p{L}\p{N}\s-]{3,40})/iu);
+    cleaned.match(/(?:хочу|нужна|нужен|интересует|записаться\s+на)\s+([A-Za-zА-Яа-яЁё0-9\s-]{3,40})/i) ||
+    cleaned.match(/(?:по|насчет|по поводу)\s+([A-Za-zА-Яа-яЁё0-9\s-]{3,40})/i);
 
   if (generic?.[1]) {
     const service = generic[1].trim().replace(/[.,!?;:]+$/g, "");
@@ -262,7 +261,8 @@ export default function DemoChat() {
   const [inputVal, setInputVal] = useState("");
   const [lead, setLead] = useState<Record<string, string>>({});
   const [typing, setTyping] = useState(false);
-  const [bookingStep, setBookingStep] = useState<BookingStep>("service");
+  const [awaitingName, setAwaitingName] = useState(false);
+  const [awaitingPhone, setAwaitingPhone] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const sectionRef = useScrollReveal();
 
@@ -303,28 +303,57 @@ export default function DemoChat() {
     void initGreeting();
   }, []);
 
-    const sendToAi = async (userText: string) => {
+  const sendToAi = async (userText: string) => {
     const detectedPhone = extractPhone(userText);
     const rawName = extractNameSmart(userText);
     const serviceFromText = normalizeServiceIntent(extractServiceIntent(userText));
     const isGenericOption =
       QUICK_OPTIONS.includes(userText) ||
-      /(СѓСЃР»СѓРі|СѓСЃР»СѓРіРё|РїСЂР°Р№СЃ|С†РµРЅС‹)/i.test(userText);
+      /(услуг|услуги|прайс|цены)/i.test(userText);
     const isAbsurdRequest = ABSURD_REQUEST_RE.test(userText.toLowerCase());
-    const detectedService = isGenericOption || isAbsurdRequest ? undefined : serviceFromText;
-
-    const hasExplicitNameIntent = /(РјРµРЅСЏ\s+Р·РѕРІСѓС‚|my\s+name\s+is|i\s*am|i'm)/i.test(userText);
+    const detectedService =
+      isGenericOption || isAbsurdRequest
+        ? undefined
+        : serviceFromText;
+    const hasExplicitNameIntent = /(меня\s+зовут|my\s+name\s+is|i\s*am|i'm)/i.test(
+      userText
+    );
     const isSingleWordReply = userText.trim().split(/\s+/).length === 1;
     const isServiceLikeName =
-      /(СЃС‚СЂРёР¶|РјР°РЅРёРє|РїРµРґРёРє|Р±СЂРѕРІ|СЂРµСЃРЅРёС†|СѓСЃР»СѓРі|Р·Р°РїРёСЃ|СѓС…РѕРґ|spa|РјР°СЃСЃР°Р¶)/i.test(userText);
+      /(стриж|маник|педик|бров|ресниц|услуг|запис|уход|spa|массаж)/i.test(userText);
     const canCaptureName =
-      (hasExplicitNameIntent || bookingStep === "name" || (bookingStep === "phone" && isSingleWordReply)) &&
+      (hasExplicitNameIntent ||
+        (awaitingName && isSingleWordReply && !detectedPhone)) &&
       !isServiceLikeName;
     const detectedName =
-      canCaptureName && rawName && !detectedService && !isBlockedName(rawName) && !QUICK_OPTIONS.includes(userText)
+      canCaptureName &&
+      rawName &&
+      !detectedService &&
+      !isBlockedName(rawName) &&
+      !QUICK_OPTIONS.includes(userText)
         ? rawName
         : undefined;
 
+    if (awaitingPhone && !detectedPhone) {
+      const reply = "����������, ����������, ��� ����� �������� ��� �����.";
+      pushBotMessage(reply);
+      setLlmHistory((prev) => [...prev, { role: "user", content: userText }, { role: "assistant", content: reply }]);
+      return;
+    }
+
+    if (awaitingName && isServiceLikeName) {
+      const serviceLabel = detectedService || serviceFromText;
+      if (serviceLabel && !lead.service) {
+        setLead((prev) => ({ ...prev, service: serviceLabel }));
+      }
+      const reply = serviceLabel
+        ? `�����, �� ������: ${serviceLabel}. ��� ��� �����?`
+        : "�����. ��� ��� �����?";
+      pushBotMessage(reply);
+      setLlmHistory((prev) => [...prev, { role: "user", content: userText }, { role: "assistant", content: reply }]);
+      setAwaitingName(true);
+      return;
+    }
     const updatedLead = {
       ...lead,
       service: lead.service || detectedService || lead.service,
@@ -332,51 +361,61 @@ export default function DemoChat() {
       phone: lead.phone || detectedPhone || lead.phone,
     };
     setLead(updatedLead);
-
-    const nextStep: BookingStep = !updatedLead.service
-      ? "service"
-      : !updatedLead.name
-      ? "name"
-      : !updatedLead.phone
-      ? "phone"
-      : "done";
-    setBookingStep(nextStep);
-
-    if (isAbsurdRequest) {
-      const reply = "Похоже, запрос не про услуги салона. Уточните, какая именно услуга нужна.";
-      pushBotMessage(reply);
-      setLlmHistory((prev) => [...prev, { role: "user", content: userText }, { role: "assistant", content: reply }]);
-      return;
-    }
-
-    if (nextStep !== "done") {
-      if (nextStep === "service") {
-        const reply = "Подскажите, какая услуга вас интересует?";
-        pushBotMessage(reply);
-        setLlmHistory((prev) => [...prev, { role: "user", content: userText }, { role: "assistant", content: reply }]);
-        return;
-      }
-      if (nextStep === "name") {
-        const servicePart = updatedLead.service ? `Услуга: ${updatedLead.service}. ` : "";
-        const reply = `${servicePart}Как вас зовут?`;
-        pushBotMessage(reply);
-        setLlmHistory((prev) => [...prev, { role: "user", content: userText }, { role: "assistant", content: reply }]);
-        return;
-      }
-      const reply = "Напишите, пожалуйста, номер телефона для связи.";
-      pushBotMessage(reply);
-      setLlmHistory((prev) => [...prev, { role: "user", content: userText }, { role: "assistant", content: reply }]);
-      return;
-    }
+    if (detectedName) setAwaitingName(false);
+    if (detectedPhone) setAwaitingPhone(false);
 
     setTyping(true);
     scrollToBottom();
 
     try {
-      const updatedHistory = [...llmHistory, { role: "user" as const, content: userText }];
-      let reply = await askDeepSeek(updatedHistory, "booking_confirmed", updatedLead);
+      const updatedHistory = [
+        ...llmHistory,
+        { role: "user" as const, content: userText },
+      ];
+      const stage =
+        !updatedLead.name || !updatedLead.phone
+          ? "lead_collection"
+          : "free_conversation";
+      let reply = await askDeepSeek(updatedHistory, stage, updatedLead);
       reply = sanitizeAssistantReply(userText, reply);
-      setLlmHistory([...updatedHistory, { role: "assistant", content: reply }]);
+
+      // If the assistant clarified a concrete service (e.g. "цель обращения — педикюр"),
+      // use that as fallback source for lead goal.
+      const serviceFromReplyRaw = extractServiceIntent(reply);
+      const userMentionsService = Boolean(serviceFromText);
+      const serviceFromReply =
+        !isGenericOption &&
+        !isAbsurdRequest &&
+        userMentionsService &&
+        isExplicitServiceConfirmation(reply) &&
+        !isServiceList(reply)
+          ? normalizeServiceIntent(serviceFromReplyRaw)
+          : undefined;
+      const bookingIntent = hasBookingIntent(userText);
+
+      let resolvedService = updatedLead.service || serviceFromReply;
+      if (bookingIntent && resolvedService) {
+        resolvedService =
+          resolvedService && !/^запись на прием/i.test(resolvedService)
+            ? `Запись на прием: ${resolvedService}`
+            : "Запись на прием";
+      }
+      if (!resolvedService && updatedLead.name && updatedLead.phone) {
+        resolvedService = SERVICE_NEEDS_CALLBACK;
+      }
+      if (resolvedService && resolvedService !== lead.service) {
+        setLead((prev) => ({ ...prev, service: resolvedService as string }));
+      }
+
+      const asksName = /(как\s+вас\s+зовут|ваше\s+имя|имя\s+клиента)/i.test(reply);
+      const asksPhone = /(номер\s+телефона|телефон\s+для\s+связи|контактн(ый|ого)\s+номер|ваш\s+номер)/i.test(reply);
+      setAwaitingName(asksName);
+      setAwaitingPhone(asksPhone);
+
+      setLlmHistory([
+        ...updatedHistory,
+        { role: "assistant", content: reply },
+      ]);
       pushBotMessage(reply);
     } catch {
       const fallback = buildFallbackReply({
@@ -415,7 +454,8 @@ export default function DemoChat() {
     setInputVal("");
     setMessages([]);
     setLlmHistory([]);
-    setBookingStep("service");
+    setAwaitingName(false);
+    setAwaitingPhone(false);
     void initGreeting();
   };
 
@@ -423,7 +463,7 @@ export default function DemoChat() {
   const isReady = Boolean(lead.name && lead.phone);
 
   return (
-    <section id="demo" ref={sectionRef} aria-label="РРЅС‚РµСЂР°РєС‚РёРІРЅС‹Р№ РґРµРјРѕ-С‡Р°С‚">
+    <section id="demo" ref={sectionRef} aria-label="Интерактивный демо-чат">
       <div
         className="section-scenario spotlight-wrap"
         style={{
@@ -448,10 +488,10 @@ export default function DemoChat() {
             letterSpacing: "-0.5px",
           }}
         >
-          РРЅС‚РµСЂР°РєС‚РёРІРЅС‹Р№ СЃС†РµРЅР°СЂРёР№
+          Интерактивный сценарий
         </h2>
         <p className="demo-chat-hint reveal reveal-delay-1">
-          РџРѕРїСЂРѕР±СѓР№С‚Рµ СЃС†РµРЅР°СЂРёР№: РЅР°Р¶РјРёС‚Рµ РєРЅРѕРїРєСѓ РёР»Рё РЅР°РїРёС€РёС‚Рµ СЃРІРѕР№ РІРѕРїСЂРѕСЃ РІ С‡Р°С‚
+          Попробуйте сценарий: нажмите кнопку или напишите свой вопрос в чат
         </p>
 
         <div
@@ -511,7 +551,7 @@ export default function DemoChat() {
                     fontSize: 15,
                   }}
                 >
-                  Р§Р°С‚-РїРѕРјРѕС‰РЅРёРє
+                  Чат-помощник
                 </div>
               </div>
               <button
@@ -519,9 +559,9 @@ export default function DemoChat() {
                 onClick={handleReset}
                 className="btn-secondary text-button"
                 style={{ fontSize: 12, padding: "6px 12px", borderRadius: 10 }}
-                aria-label="РЎР±СЂРѕСЃРёС‚СЊ РґРёР°Р»РѕРі"
+                aria-label="Сбросить диалог"
               >
-                РЎР±СЂРѕСЃ
+                Сброс
               </button>
             </div>
 
@@ -642,9 +682,9 @@ export default function DemoChat() {
                   onKeyDown={(e) =>
                     e.key === "Enter" && void handleSend()
                   }
-                  placeholder="РќР°РїРёС€РёС‚Рµ РІР°С€ РІРѕРїСЂРѕСЃ..."
+                  placeholder="Напишите ваш вопрос..."
                   style={{ flex: 1, padding: "12px 14px", fontSize: 14 }}
-                  aria-label="Р’РІРµРґРёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ"
+                  aria-label="Введите сообщение"
                 />
                 <button
                   type="button"
@@ -657,7 +697,7 @@ export default function DemoChat() {
                     borderRadius: 14,
                     opacity: typing ? 0.7 : 1,
                   }}
-                  aria-label="РћС‚РїСЂР°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ"
+                  aria-label="Отправить сообщение"
                 >
                   <svg
                     width="18"
@@ -728,7 +768,7 @@ export default function DemoChat() {
               <span
                 style={{ fontWeight: 600, fontSize: 18, color: "var(--text)" }}
               >
-                РљР°СЂС‚РѕС‡РєР° Р·Р°СЏРІРєРё
+                Карточка заявки
               </span>
               <span
                 style={{
@@ -745,7 +785,7 @@ export default function DemoChat() {
                   transition: "all 0.3s ease",
                 }}
               >
-                {isReady ? "РЎРѕР±СЂР°РЅРѕ" : "Р’ РїСЂРѕС†РµСЃСЃРµ"}
+                {isReady ? "Собрано" : "В процессе"}
               </span>
             </div>
 
@@ -759,9 +799,9 @@ export default function DemoChat() {
               }}
             >
               {[
-                { label: "Р¦РµР»СЊ РѕР±СЂР°С‰РµРЅРёСЏ", value: lead.service, icon: "рџЋЇ" },
-                { label: "РРјСЏ РєР»РёРµРЅС‚Р°", value: lead.name, icon: "рџ‘¤" },
-                { label: "РљРѕРЅС‚Р°РєС‚РЅС‹Р№ РЅРѕРјРµСЂ", value: lead.phone, icon: "рџ“±" },
+                { label: "Цель обращения", value: lead.service, icon: "🎯" },
+                { label: "Имя клиента", value: lead.name, icon: "👤" },
+                { label: "Контактный номер", value: lead.phone, icon: "📱" },
               ].map(({ label, value, icon }) => (
                 <div key={label}>
                   <div
@@ -786,7 +826,7 @@ export default function DemoChat() {
                       transition: "color 0.3s ease",
                     }}
                   >
-                    {value || "РћР¶РёРґР°РЅРёРµ РґР°РЅРЅС‹С…..."}
+                    {value || "Ожидание данных..."}
                   </div>
                 </div>
               ))}
@@ -825,8 +865,8 @@ export default function DemoChat() {
                 }}
               >
                 {isReady
-                  ? "РљРѕРЅС‚Р°РєС‚С‹ СЃРѕР±СЂР°РЅС‹. РњРѕР¶РЅРѕ РїРµСЂРµРґР°РІР°С‚СЊ Р·Р°СЏРІРєСѓ РІ CRM."
-                  : "Р—Р°РїРѕР»РЅСЏРµС‚СЃСЏ РїРѕ С…РѕРґСѓ РґРёР°Р»РѕРіР°."}
+                  ? "Контакты собраны. Можно передавать заявку в CRM."
+                  : "Заполняется по ходу диалога."}
               </div>
             </div>
           </div>
@@ -865,5 +905,3 @@ export default function DemoChat() {
     </section>
   );
 }
-
-
