@@ -139,6 +139,26 @@ function isSuspiciousServiceRequest(text: string): boolean {
   return /(спин|колен|локт|пятк|ступн|живот|поясниц|плечо)/i.test(lower);
 }
 
+function isExplicitServiceConfirmation(text: string): boolean {
+  return /(цель обращения|услуга:|это будет|запись на)/i.test(text);
+}
+
+function isServiceList(text: string): boolean {
+  const lower = text.toLowerCase();
+  const hits = [
+    /стриж/gi,
+    /маник/gi,
+    /педик/gi,
+    /бров/gi,
+    /ресниц/gi,
+    /уход/gi,
+    /пилинг/gi,
+    /массаж/gi,
+    /окраш/gi,
+  ].reduce((acc, re) => acc + ((lower.match(re) || []).length > 0 ? 1 : 0), 0);
+  return hits >= 2;
+}
+
 function sanitizeAssistantReply(userText: string, reply: string): string {
   if (!reply) return reply;
   if (!isSuspiciousServiceRequest(userText)) return reply;
@@ -232,7 +252,10 @@ export default function DemoChat() {
   const sendToAi = async (userText: string) => {
     const detectedPhone = extractPhone(userText);
     const rawName = extractNameSmart(userText);
-    const detectedService = normalizeServiceIntent(extractServiceIntent(userText));
+    const isGenericOption = QUICK_OPTIONS.includes(userText);
+    const detectedService = isGenericOption
+      ? undefined
+      : normalizeServiceIntent(extractServiceIntent(userText));
     const hasExplicitNameIntent = /(меня\s+зовут|my\s+name\s+is|i\s*am|i'm)/i.test(
       userText
     );
@@ -271,7 +294,13 @@ export default function DemoChat() {
 
       // If the assistant clarified a concrete service (e.g. "цель обращения — педикюр"),
       // use that as fallback source for lead goal.
-      const serviceFromReply = normalizeServiceIntent(extractServiceIntent(reply));
+      const serviceFromReplyRaw = extractServiceIntent(reply);
+      const serviceFromReply =
+        !isGenericOption &&
+        isExplicitServiceConfirmation(reply) &&
+        !isServiceList(reply)
+          ? normalizeServiceIntent(serviceFromReplyRaw)
+          : undefined;
       const bookingIntent = hasBookingIntent(userText) || hasBookingIntent(reply);
 
       let resolvedService = updatedLead.service || serviceFromReply;
