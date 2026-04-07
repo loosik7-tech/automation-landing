@@ -88,8 +88,8 @@ function buildFallbackReply(params: {
 function extractName(text: string): string | undefined {
   const lower = text.toLowerCase();
   const match =
-    lower.match(/РјРµРЅСЏ Р·РѕРІСѓС‚\s+([Р°-СЏС‘a-z-]+)/i) ||
-    lower.match(/СЏ\s+([Р°-СЏС‘a-z-]{2,})/i);
+    lower.match(/меня\s+зовут\s+([\p{L}-]+)/iu) ||
+    lower.match(/я\s+([\p{L}-]{2,})/iu);
   if (!match?.[1]) return undefined;
   const raw = match[1];
   return raw.charAt(0).toUpperCase() + raw.slice(1);
@@ -241,8 +241,8 @@ function extractServiceIntent(text: string): string | undefined {
 
   // Generic intent: "С…РѕС‡Сѓ Р·Р°РїРёСЃР°С‚СЊСЃСЏ РЅР° ...", "РЅСѓР¶РЅР° ..."
   const generic =
-    cleaned.match(/(?:С…РѕС‡Сѓ|РЅСѓР¶РЅР°|РЅСѓР¶РµРЅ|РёРЅС‚РµСЂРµСЃСѓРµС‚|Р·Р°РїРёСЃР°С‚СЊСЃСЏ\s+РЅР°)\s+([A-Za-zРђ-РЇР°-СЏРЃС‘0-9\s-]{3,40})/i) ||
-    cleaned.match(/(?:РїРѕ|РЅР°СЃС‡РµС‚|РїРѕ РїРѕРІРѕРґСѓ)\s+([A-Za-zРђ-РЇР°-СЏРЃС‘0-9\s-]{3,40})/i);
+    cleaned.match(/(?:хочу|нужна|нужен|интересует|записаться\s+на)\s+([\p{L}\p{N}\s-]{3,40})/iu) ||
+    cleaned.match(/(?:по|насчет|по поводу)\s+([\p{L}\p{N}\s-]{3,40})/iu);
 
   if (generic?.[1]) {
     const service = generic[1].trim().replace(/[.,!?;:]+$/g, "");
