@@ -408,6 +408,8 @@ export default function DemoChat() {
       // If the assistant clarified a concrete service (e.g. "цель обращения — педикюр"),
       // use that as fallback source for lead goal.
       const aiServiceRaw = normalizeServiceIntent(ai.lead_update?.service);
+      const aiNameRaw = ai.lead_update?.name?.trim();
+      const aiPhoneRaw = ai.lead_update?.phone ? extractPhone(ai.lead_update.phone) : undefined;
       const serviceFromReplyRaw = extractServiceIntent(reply);
       const userMentionsService = Boolean(serviceFromText);
       const serviceFromReply =
@@ -429,18 +431,30 @@ export default function DemoChat() {
         (ai.confidence ?? 0) >= 0.6
           ? aiServiceRaw
           : undefined;
-      let resolvedService = updatedLead.service || aiServiceAccepted || serviceFromReply;
+      const resolvedName =
+        updatedLead.name ||
+        (aiNameRaw && !isBlockedName(aiNameRaw) ? aiNameRaw : undefined);
+      const resolvedPhone = updatedLead.phone || aiPhoneRaw;
+      const resolvedLead = { ...updatedLead, name: resolvedName, phone: resolvedPhone };
+      setLead(resolvedLead);
+
+      let resolvedService = resolvedLead.service || aiServiceAccepted || serviceFromReply;
       if (bookingIntent && resolvedService) {
         resolvedService =
           resolvedService && !/^запись на прием/i.test(resolvedService)
             ? `Запись на прием: ${resolvedService}`
             : "Запись на прием";
       }
-      if (!resolvedService && updatedLead.name && updatedLead.phone) {
+      if (!resolvedService && resolvedLead.name && resolvedLead.phone) {
         resolvedService = SERVICE_NEEDS_CALLBACK;
       }
       if (resolvedService && resolvedService !== lead.service) {
         setLead((prev) => ({ ...prev, service: resolvedService as string }));
+      }
+
+      const hasTimeInUser = /(завтра|сегодня|послезавтра|в\s*\d{1,2}(:\d{2})?|на\s*\d{1,2}(:\d{2})?|утр|дн(е|ё)м|вечер|время)/i.test(userText);
+      if (resolvedService && resolvedLead.name && resolvedLead.phone && !hasTimeInUser) {
+        reply = "Отлично, данные сохранила. Подскажите, пожалуйста, удобное время записи.";
       }
 
       const asksName = /(как\s+вас\s+зовут|ваше\s+имя|имя\s+клиента)/i.test(reply);
