@@ -39,6 +39,51 @@ async function askDeepSeek(
   return data.reply?.trim() || ASK_AI_FALLBACK;
 }
 
+function buildFallbackReply(params: {
+  userText: string;
+  lead: Record<string, string>;
+  detectedService?: string;
+  bookingIntent: boolean;
+  isAbsurd: boolean;
+}) {
+  const { userText, lead, detectedService, bookingIntent, isAbsurd } = params;
+  if (isAbsurd) {
+    return "Похоже, запрос не совсем про услуги салона. Уточните, пожалуйста, что именно Вы хотите, и я подскажу подходящий вариант.";
+  }
+
+  const priceMap: Record<string, string> = {
+    "Стрижка": "от 1800 ₽",
+    "Маникюр": "2200 ₽",
+    "Педикюр": "2500 ₽",
+    "Брови/ресницы": "1200 ₽",
+    "Уход за лицом": "3000 ₽",
+  };
+
+  if (detectedService) {
+    const price = priceMap[detectedService];
+    if (bookingIntent) {
+      return `Понял. ${detectedService}${price ? ` — ${price}` : ""}. Как Вас зовут?`;
+    }
+    return price
+      ? `${detectedService} — ${price}. Хотите записаться на удобное время?`
+      : `Понял, интересует ${detectedService}. Хотите записаться?`;
+  }
+
+  if (!lead.name) {
+    return "Понял. Как Вас зовут?";
+  }
+
+  if (!lead.phone) {
+    return "Подскажите, пожалуйста, Ваш номер телефона для связи.";
+  }
+
+  if (/завтра|сегодня|на\s*\d{1,2}|в\s*\d{1,2}/i.test(userText)) {
+    return "Понял. На какое время Вам будет удобно? После этого подтвержу запись.";
+  }
+
+  return ASK_AI_FALLBACK;
+}
+
 function extractName(text: string): string | undefined {
   const lower = text.toLowerCase();
   const match =
@@ -261,6 +306,7 @@ export default function DemoChat() {
   const sendToAi = async (userText: string) => {
     const detectedPhone = extractPhone(userText);
     const rawName = extractNameSmart(userText);
+    const serviceFromText = normalizeServiceIntent(extractServiceIntent(userText));
     const isGenericOption =
       QUICK_OPTIONS.includes(userText) ||
       /(услуг|услуги|прайс|цены)/i.test(userText);
@@ -268,7 +314,7 @@ export default function DemoChat() {
     const detectedService =
       isGenericOption || isAbsurdRequest
         ? undefined
-        : normalizeServiceIntent(extractServiceIntent(userText));
+        : serviceFromText;
     const hasExplicitNameIntent = /(меня\s+зовут|my\s+name\s+is|i\s*am|i'm)/i.test(
       userText
     );
@@ -288,6 +334,26 @@ export default function DemoChat() {
         ? rawName
         : undefined;
 
+    if (awaitingPhone && !detectedPhone) {
+      const reply = "����������, ����������, ��� ����� �������� ��� �����.";
+      pushBotMessage(reply);
+      setLlmHistory((prev) => [...prev, { role: "user", content: userText }, { role: "assistant", content: reply }]);
+      return;
+    }
+
+    if (awaitingName && isServiceLikeName) {
+      const serviceLabel = detectedService || serviceFromText;
+      if (serviceLabel && !lead.service) {
+        setLead((prev) => ({ ...prev, service: serviceLabel }));
+      }
+      const reply = serviceLabel
+        ? `�����, �� ������: ${serviceLabel}. ��� ��� �����?`
+        : "�����. ��� ��� �����?";
+      pushBotMessage(reply);
+      setLlmHistory((prev) => [...prev, { role: "user", content: userText }, { role: "assistant", content: reply }]);
+      setAwaitingName(true);
+      return;
+    }
     const updatedLead = {
       ...lead,
       service: lead.service || detectedService || lead.service,
@@ -316,9 +382,11 @@ export default function DemoChat() {
       // If the assistant clarified a concrete service (e.g. "цель обращения — педикюр"),
       // use that as fallback source for lead goal.
       const serviceFromReplyRaw = extractServiceIntent(reply);
+      const userMentionsService = Boolean(serviceFromText);
       const serviceFromReply =
         !isGenericOption &&
         !isAbsurdRequest &&
+        userMentionsService &&
         isExplicitServiceConfirmation(reply) &&
         !isServiceList(reply)
           ? normalizeServiceIntent(serviceFromReplyRaw)
@@ -350,8 +418,13 @@ export default function DemoChat() {
       ]);
       pushBotMessage(reply);
     } catch {
-      const fallback =
-        "Спасибо, понял. Могу подсказать по услугам, цене или сразу помочь с записью.";
+      const fallback = buildFallbackReply({
+        userText,
+        lead: updatedLead,
+        detectedService,
+        bookingIntent: hasBookingIntent(userText),
+        isAbsurd: isAbsurdRequest,
+      });
       setLlmHistory((prev) => [
         ...prev,
         { role: "user", content: userText },
