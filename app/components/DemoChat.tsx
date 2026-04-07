@@ -311,8 +311,9 @@ export default function DemoChat() {
       QUICK_OPTIONS.includes(userText) ||
       /(услуг|услуги|прайс|цены)/i.test(userText);
     const isAbsurdRequest = ABSURD_REQUEST_RE.test(userText.toLowerCase());
+    const hasBodyPartConflict = isSuspiciousServiceRequest(userText);
     const detectedService =
-      isGenericOption || isAbsurdRequest
+      isGenericOption || isAbsurdRequest || hasBodyPartConflict
         ? undefined
         : serviceFromText;
     const hasExplicitNameIntent = /(меня\s+зовут|my\s+name\s+is|i\s*am|i'm)/i.test(
@@ -386,6 +387,7 @@ export default function DemoChat() {
       const serviceFromReply =
         !isGenericOption &&
         !isAbsurdRequest &&
+        !hasBodyPartConflict &&
         userMentionsService &&
         isExplicitServiceConfirmation(reply) &&
         !isServiceList(reply)
