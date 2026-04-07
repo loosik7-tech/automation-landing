@@ -107,15 +107,15 @@ function extractNameSmart(text: string): string | undefined {
   if (!cleaned) return undefined;
 
   const phraseMatch =
-    cleaned.match(/(?:РјРµРЅСЏ\s+Р·РѕРІСѓС‚|СЏ)\s+([A-Za-zРђ-РЇР°-СЏРЃС‘-]{2,})/i) ||
-    cleaned.match(/(?:my\s+name\s+is|i\s*am|i'm)\s+([A-Za-zРђ-РЇР°-СЏРЃС‘-]{2,})/i);
+    cleaned.match(/(?:меня\s+зовут|я)\s+([\p{L}-]{2,})/iu) ||
+    cleaned.match(/(?:my\s+name\s+is|i\s*am|i'm)\s+([\p{L}-]{2,})/iu);
 
   if (phraseMatch?.[1]) {
-    const value = phraseMatch[1].replace(/[^A-Za-zРђ-РЇР°-СЏРЃС‘-]/g, "");
+    const value = phraseMatch[1].replace(/[^\p{L}-]/gu, "");
     return value.charAt(0).toUpperCase() + value.slice(1);
   }
 
-  if (/^[A-Za-zРђ-РЇР°-СЏРЃС‘-]{2,20}$/.test(cleaned)) {
+  if (/^[\p{L}-]{2,20}$/u.test(cleaned)) {
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
 
@@ -123,7 +123,7 @@ function extractNameSmart(text: string): string | undefined {
 }
 
 function normalizeToken(value: string): string {
-  return value.toLowerCase().replace(/\s+/g, "").replace(/[^a-zР°-СЏС‘-]/gi, "");
+  return value.toLowerCase().replace(/\s+/g, "").replace(/[^\p{L}\p{N}-]/gu, "");
 }
 
 function isBlockedName(value: string): boolean {
