@@ -435,7 +435,9 @@ export default function DemoChat() {
         updatedLead.name ||
         (aiNameRaw && !isBlockedName(aiNameRaw) ? aiNameRaw : undefined);
       const resolvedPhone = updatedLead.phone || aiPhoneRaw;
-      const resolvedLead = { ...updatedLead, name: resolvedName, phone: resolvedPhone };
+      const resolvedLead: Record<string, string> = { ...updatedLead };
+      if (resolvedName) resolvedLead.name = resolvedName;
+      if (resolvedPhone) resolvedLead.phone = resolvedPhone;
       setLead(resolvedLead);
 
       let resolvedService = resolvedLead.service || aiServiceAccepted || serviceFromReply;
