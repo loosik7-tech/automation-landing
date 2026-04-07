@@ -161,14 +161,18 @@ function isServiceList(text: string): boolean {
 
 function sanitizeAssistantReply(userText: string, reply: string): string {
   if (!reply) return reply;
-  if (!isSuspiciousServiceRequest(userText)) return reply;
+  let cleaned = reply.trim();
+  if (/^спасибо[!.,\s]/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^спасибо[!.,\s]*/i, "Понял. ");
+  }
+  if (!isSuspiciousServiceRequest(userText)) return cleaned;
 
   const confirmsWeHaveIt =
     /(да|конечно|отлично).*(у нас есть|доступна|предоставляется|входит)/i.test(
       reply
     ) || /(стрижк[аи]\s+спин|услуг[аи]\s+.*спин)/i.test(reply.toLowerCase());
 
-  if (!confirmsWeHaveIt) return reply;
+  if (!confirmsWeHaveIt) return cleaned;
 
   return "Похоже, запрос неоднозначный. Уточните, пожалуйста: Вас интересует стрижка волос или процедура ухода/депиляции для спины? Я подскажу самый подходящий вариант.";
 }
