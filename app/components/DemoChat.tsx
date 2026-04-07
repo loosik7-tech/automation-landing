@@ -13,6 +13,9 @@ const QUICK_OPTIONS = [
   "Другое",
 ];
 
+const ABSURD_REQUEST_RE =
+  /(яиц|яйц|пенис|член|интим|пах|жоп|задниц|секс|эрот|анус|генитал|пизд|хуй|дичь)/i;
+
 const FALLBACK_GREETING =
   "Здравствуйте! Я онлайн-консультант салона. Подскажу по услугам, ценам и записи.";
 const ASK_AI_FALLBACK =
@@ -261,9 +264,11 @@ export default function DemoChat() {
     const isGenericOption =
       QUICK_OPTIONS.includes(userText) ||
       /(услуг|услуги|прайс|цены)/i.test(userText);
-    const detectedService = isGenericOption
-      ? undefined
-      : normalizeServiceIntent(extractServiceIntent(userText));
+    const isAbsurdRequest = ABSURD_REQUEST_RE.test(userText.toLowerCase());
+    const detectedService =
+      isGenericOption || isAbsurdRequest
+        ? undefined
+        : normalizeServiceIntent(extractServiceIntent(userText));
     const hasExplicitNameIntent = /(меня\s+зовут|my\s+name\s+is|i\s*am|i'm)/i.test(
       userText
     );
@@ -313,6 +318,7 @@ export default function DemoChat() {
       const serviceFromReplyRaw = extractServiceIntent(reply);
       const serviceFromReply =
         !isGenericOption &&
+        !isAbsurdRequest &&
         isExplicitServiceConfirmation(reply) &&
         !isServiceList(reply)
           ? normalizeServiceIntent(serviceFromReplyRaw)
