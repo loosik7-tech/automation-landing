@@ -77,10 +77,10 @@ function buildFallbackReply(params: {
   if (detectedService) {
     const price = priceMap[detectedService];
     if (bookingIntent) {
-      return `РџРѕРЅСЏР». ${detectedService}${price ? ` вЂ” ${price}` : ""}. РљР°Рє Р’Р°СЃ Р·РѕРІСѓС‚?`;
+      return `РџРѕРЅСЏР». ${detectedService}${price ? ` — ${price}` : ""}. РљР°Рє Р’Р°СЃ Р·РѕРІСѓС‚?`;
     }
     return price
-      ? `${detectedService} вЂ” ${price}. РҐРѕС‚РёС‚Рµ Р·Р°РїРёСЃР°С‚СЊСЃСЏ РЅР° СѓРґРѕР±РЅРѕРµ РІСЂРµРјСЏ?`
+      ? `${detectedService} — ${price}. РҐРѕС‚РёС‚Рµ Р·Р°РїРёСЃР°С‚СЊСЃСЏ РЅР° СѓРґРѕР±РЅРѕРµ РІСЂРµРјСЏ?`
       : `РџРѕРЅСЏР», РёРЅС‚РµСЂРµСЃСѓРµС‚ ${detectedService}. РҐРѕС‚РёС‚Рµ Р·Р°РїРёСЃР°С‚СЊСЃСЏ?`;
   }
 
@@ -405,7 +405,7 @@ export default function DemoChat() {
       const ai = await askDeepSeek(updatedHistory, stage, updatedLead);
       let reply = sanitizeAssistantReply(userText, ai.reply || ASK_AI_FALLBACK);
 
-      // If the assistant clarified a concrete service (e.g. "С†РµР»СЊ РѕР±СЂР°С‰РµРЅРёСЏ вЂ” РїРµРґРёРєСЋСЂ"),
+      // If the assistant clarified a concrete service (e.g. "С†РµР»СЊ РѕР±СЂР°С‰РµРЅРёСЏ — РїРµРґРёРєСЋСЂ"),
       // use that as fallback source for lead goal.
       const aiServiceRaw = normalizeServiceIntent(ai.lead_update?.service);
       const aiNameRaw = ai.lead_update?.name?.trim();
@@ -971,5 +971,6 @@ export default function DemoChat() {
     </section>
   );
 }
+
 
 
